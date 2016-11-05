@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>打飞机</title>
+	<meta charset="utf8">
+
+	<script>
+		var i        = 0;
+		var enemes   = [];
+		var flyTime  = null;
+		var randowT  = 1000;
+		var clearT   = null;
+		var bullets  = [];
+		function Bullet(x,y){
+			this.x    = x;
+			this.y    = y;
+			var _this = this;
+			this.obj  = (function(){
+				var obj = document.createElement('div');
+				obj.style.position = 'absolute';
+				obj.style.height   = 10 + 'px';
+				obj.style.width    = 3 + 'px';
+				obj.style.top      = _this.y + 'px';
+				obj.style.left     = _this.x + 'px';
+				obj.style.background         = 'red';
+				document.getElementById('ground').appendChild(obj);
+				return obj;
+			})()
+			this.run  = setInterval(function(){
+				if(_this.obj){
+					_this.obj.style.top = _this.obj.offsetTop - 30 +'px'
+				}
+			},60)
+		}
+		function MyAir(oId){
+			this.oId = oId;
+			this.obj = document.getElementById(this.oId);
+			this.position = ["-430px 1px","-430px -330px"];
+			var _this     = this;
+			this.timer    = setInterval(function(){
+				i++;
+				_this.obj.style.background         = 'url(images/gameArts.png)';
+				_this.obj.style.backgroundPosition = _this.position[i%2];
+				_this.obj.style.backgroundSize     = '512px 1024px';
+			},500)
+			this.run      = function (x,y){
+				this.obj.style.left  = x - 34 + "px";
+				this.obj.style.top   = y - 34 + "px";
+			}
+			this.shoot    = setInterval(function (){
+				var bullet = new Bullet(_this.obj.offsetLeft+34,_this.obj.offsetTop);
+				bullets.push(bullet);
+			}, 300)
+		}
+		function EnemyAir(nMaxW,nMaxH,width,height,bgX,bgY){
+			this.x      = Math.floor(Math.random()*(nMaxW-width));
+			this.y      = -height;
+			this.width  = width;
+			this.height = height;
+			this.speed  = Math.floor(Math.random()*5+4);
+			this.bgX    = bgX;
+			this.bgY    = bgY;
+			var _this   = this;
+			this.obj    = (function(){
+				var obj = document.createElement('div');
+				obj.style.position = 'absolute';
+				obj.style.height   = _this.height + 'px';
+				obj.style.width    = _this.width + 'px';
+				obj.style.top      = _this.y + 'px';
+				obj.style.left     = _this.x + 'px';
+				obj.style.background         = 'url(images/gameArts.png)';
+				// obj.style.backgroundSize     = '512px 1024px';
+				obj.style.backgroundPosition = _this.bgX + 'px'+' '+_this.bgY+'px';
+				document.getElementById('ground').appendChild(obj);
+				return obj;
+			}());
+			this.run    = setInterval(function(){
+
+				if(_this.obj){
+					var oTop  = _this.obj.offsetTop;
+					oTop     += _this.speed;
+					_this.obj.style.top = oTop +'px';
+				}
+			},40);
+		}
+		function randomCreateAir(){
+			var obj     = null;
+			var index   = Math.floor(Math.random()*3)
+			switch(index){
+				case 0:
+					obj = new EnemyAir(320,570,36,30,-81,-655);
+					break;
+				case 1:
+					obj = new EnemyAir(320,570,45,59,0,-566);
+					break;
+				case 2:
+					obj = new EnemyAir(320,570,105,158,-312,-688);
+					break;
+			}
+			enemes.push(obj)
+		}
+		var currentSource=0;
+		function clearAir(){
+			for(var i=0 ; i < enemes.length;i++){
+				var myEnems       = enemes[i];
+				var currentIndex  = myEnems.obj.offsetTop - myEnems.obj.offsetWidth;
+				if (currentIndex >= 570) {
+					myEnems.obj.parentNode.removeChild(myEnems.obj);
+					enemes.splice(i,1);
+					break;
+				}
+			}
+			for(var j=0; j<bullets.length;j++){
+				var bullet        = bullets[j];
+				var currentOffset = bullet.obj.offsetTop;
+				if (currentOffset<= -10) {
+					bullet.obj.parentNode.removeChild(bullet.obj)
+					bullets.splice(j,1);
+					break;
+				}
+			}
+			for(var k=0; k< enemes.length; k ++){
+				var myPlane = enemes[k];
+				for(var l=0; l < bullets.length; l ++){
+
+					var bull = bullets[l];
+					if (myPlane.obj.offsetLeft < bull.obj.offsetLeft && myPlane.width+myPlane.obj.offsetLeft > bull.obj.offsetLeft + 3 && myPlane.obj.offsetTop<bull.obj.offsetTop && myPlane.obj.offsetTop+myPlane.height >= bull.obj.offsetTop) {
+                        currentSource++;
+						document.getElementById('showSource').innerHTML='目前得分是'+currentSource;
+						myPlane.obj.parentNode.removeChild(myPlane.obj);
+						enemes.splice(k,1);
+						bull.obj.parentNode.removeChild(bull.obj)
+						bullets.splice(l,1);
+					}
+				}
+			}
+		}
+
+		window.onload   = function(){
+			var ground  = document.getElementById('ground');
+			var myPlane = new MyAir("myPlane")
+			ground.onmousemove = function(e){
+				var e   = e || event;
+				var mX  = e.clientX;
+				var mY  = e.clientY;
+				myPlane.run(mX,mY);
+			}
+			flyTime     = setInterval(function(){
+				randowT = (Math.random()*201 + 800);
+				randomCreateAir()
+			},randowT);
+			clearT      = setInterval(function(){
+				clearAir()
+			},30);
+		}
+	</script>
+</head>
+<body>
+
+	<div style="position:absolute;width:320px;height: 570px;background:url(images/gameArts.png);background-size:512px 1024px;background-position: 0 0;left: 0;top:0;overflow: hidden;" id="ground">
+		<div style="background:url(images/gameArts.png);background-position: -430px 1px;width:69px;height:80px;position:absolute;top:0;left:0;" id="myPlane"></div>
+	</div>
+
+	<audio autoloop loop autoplay="autoplay">
+		<source src="images/game_music.mp3">
+	</audio>
+<div id="source">
+	<p id="showSource" style="margin-left: 400px;width: 200px;height: 100px;background-color: red;text-align: center;line-height: 100px;font-size: 24px;border-radius: 20px;"></p>
+</div>
+</body>
+</html>
